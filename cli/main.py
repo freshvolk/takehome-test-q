@@ -412,6 +412,7 @@ def pt(
     cmd = ["kubectl", "--context", config["ctx_name"], "-n", ns] + args
     os.execvp("kubectl", cmd)
 
+
 @k8s_app.command()
 def logs(
     env: str = typer.Option(None),
@@ -419,17 +420,17 @@ def logs(
 ):
     """stream logs from app pods"""
     config = _env_config()
-    
+
     current_env = _tf_current_workspace()
-    
+
     if not current_env:
         log.error(
             "there appears to be no active environment! this really shouldn't happen!"
         )
         raise typer.Exit(7)
-    
-    args = ["logs", "-l", f"app={config["app_name"]}"]
-    
+
+    args = ["logs", "-l", f"app={config['app_name']}"]
+
     if follow:
         args.append("-f")
     _kubecmd(*args, ns=current_env, check=True)

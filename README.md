@@ -23,8 +23,8 @@
 - [x] cli-env select: terraform workspace select
   - [ ] env delete: teardown and destroy workspace
 - [ ] passthrough k8s commands
-- [ ] cli-k8s
-  - [ ] log
+- [x] cli-k8s
+  - [x] log
   - [ ] versions
   - [ ] restart
   - [ ] request
