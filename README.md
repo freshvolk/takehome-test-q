@@ -17,10 +17,10 @@
 - [x] cli-down: stop/delete minikube, clean docker
 - [x] terraform
 - [x] cli-deploy: build + terraform (namespace based on tf workspace)
-- [ ] cli-spin-up: deploy
-- [ ] cli-teardown: terraform destroy on current or --all
-- [ ] cli-env list: terraform workspace list (plus status?)
-- [ ] cli-env select: terraform workspace select
+- [x] cli-spin-up: create/swtich env and deploy
+- [x] cli-teardown: terraform destroy on current or --all
+- [x] cli-env list: terraform workspace list (plus status?)
+- [x] cli-env select: terraform workspace select
   - [ ] env delete: teardown and destroy workspace
 - [ ] passthrough k8s commands
 - [ ] cli-k8s
