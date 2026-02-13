@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+
+set -e
+
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+PURPLE='\033[0;35m'
+NC='\033[0m'
+
+CLI_PREFIX="${PURPLE}[CLI]${NC}"
+
+log() {
+    case $1 in
+        "info") echo -e "${CLI_PREFIX} ${CYAN}[INFO]${NC} $2" ;;
+        "error") echo -e "${CLI_PREFIX} ${RED}[ERROR]${NC} $2" ;;
+    esac
+}
+
+log "info" "checking prerequisites"
+
+REQUIRED_TOOLS="docker minikube terraform poetry"
+MISSING_COUNT=0
+
+get_install_url() {
+    case $1 in
+        "docker") echo "https://docs.docker.com/get-docker/" ;;
+        "minikube") echo "https://minikube.sigs.k8s.io/docs/start/" ;;
+        "terraform") echo "https://developer.hashicorp.com/terraform/install" ;;
+        "poetry") echo "https://python-poetry.org/docs/#installation" ;;
+    esac
+}
+
+for tool in $REQUIRED_TOOLS; do
+    if ! command -v "$tool" &> /dev/null; then
+        log "error" "$tool is missing"
+        log "error" "   -> Install here: $(get_install_url $tool)"
+        MISSING_COUNT=$((MISSING_COUNT+1))
+    fi
+done
+
+if [ $MISSING_COUNT -ne 0 ]; then
+    log "error" "please install missing tools and try again"
+    log "error" "asdf or mise are recommended to automatically manage tools"
+    exit 1
+fi
+
+# check if .env exists
+if [ ! -f .env ]; then
+  log "info" ".env not found. initializing from .env.example"
+  cp .env.example .env
+fi
+
+set -a
+source .env
+set +a
+
+# check poetry install
+if [ ! -f "pyproject.toml" ]; then
+    log "error" "pyproject.toml not found"
+    log "error" "run script from root of the project"
+    exit 1
+fi
+if ! poetry env info --path &> /dev/null; then
+    log "info" "no project environment not found. installing..."
+    poetry install
+    log "info" "dev env initialized!"
+fi
+
+log "info" "tools exist and poetry is configured"
+
+# then exec main cli via poetry
+if [ $# -eq 0 ]; then
+    exec poetry run dev --help
+else
+    # generate ephemeral version
+    export EPHEM_VERSION="$(poetry version -s)-dev.$(git rev-parse --short HEAD).$(date +%s)"
+    exec poetry run dev "$@"
+fi

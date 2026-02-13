@@ -5,3 +5,4 @@ __pycache__
 .venv
 poetry.toml
 .DS_Store
+.pytest_cache

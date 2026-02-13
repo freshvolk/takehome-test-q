@@ -3,13 +3,14 @@
 - [x] poetry config
 - [x] app
 - [x] tests
-- [ ] cli - basic
-  - [ ] wrapper
-    - [ ] check deps: poetry, doker, tf, minikube
-    - [ ] run poetry install
-    - [ ] copy .env.example to .env
-    - [ ] run cli through poetry
-  - [ ] local: fastapi dev
+- [x] cli - basic
+  - [x] wrapper
+    - [x] check deps: poetry, doker, tf, minikube
+    - [x] run poetry install
+    - [x] copy .env.example to .env
+    - [x] run cli through poetry
+  - [x] local: fastapi dev
+  - [x] test: pytest
 - [ ] dockerfile
 - [ ] cli-init: minikube start (profile name from .env)
 - [ ] cli-build: minikube docker-env | docker build (use labels)
