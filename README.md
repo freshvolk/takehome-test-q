@@ -1,6 +1,6 @@
 #### todo
 
-- [ ] poetry config
+- [x] poetry config
 - [ ] app
 - [ ] tests
 - [ ] cli - basic

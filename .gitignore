@@ -1,0 +1,6 @@
+__pycache__
+.terraform
+*.tfstate*
+.env
+.venv
+poetry.toml
