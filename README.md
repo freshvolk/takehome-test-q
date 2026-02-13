@@ -13,7 +13,7 @@
   - [x] test: pytest
 - [x] dockerfile
 - [x] cli-init: minikube start (profile name from .env)
-- [ ] cli-build: minikube docker-env | docker build (use labels)
+- [x] cli-build: minikube docker-env | docker build (use labels)
 - [x] cli-down: stop/delete minikube, clean docker
 - [ ] terraform
 - [ ] cli-deploy: build + terraform (namespace based on tf workspace)

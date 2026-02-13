@@ -1,6 +1,7 @@
 import datetime
 import os
 import subprocess
+from typing import Any, Literal, Optional, overload
 
 import typer
 
@@ -24,10 +25,24 @@ def _ephemeral_version() -> str:
     return os.getenv("EPHEM_VERSION", f"{datetime.datetime.now():%Y%m%d%H%M%S}")
 
 
+@overload
 def _mkcmd(
-    *args, profile: str, check: bool = True, **kwargs
-) -> subprocess.CompletedProcess[str]:
+    *args: str, profile: str, return_cmd: Literal[True], **kwargs: Any
+) -> list[str]: ...
+@overload
+def _mkcmd(
+    *args: str,
+    profile: str,
+    return_cmd: Literal[False] = False,
+    check: bool = True,
+    **kwargs: Any,
+) -> subprocess.CompletedProcess[Any]: ...
+def _mkcmd(
+    *args, profile: str, return_cmd: bool = False, check: bool = True, **kwargs
+) -> list[str] | subprocess.CompletedProcess[str]:
     cmd = ["minikube", f"-p={profile}"] + list(args)
+    if return_cmd:
+        return cmd
     return subprocess.run(cmd, check=check, **kwargs)
 
 
@@ -95,3 +110,43 @@ def test(cov: bool = typer.Option(False, "--cov")):
         cmd.append("--cov=app")
     log.info("running tests")
     subprocess.run(cmd, check=True)
+
+
+@app.command()
+def build(
+    version: Optional[str] = typer.Argument(
+        None, help="explicitly defined version to build image as"
+    ),
+):
+    """build the docker image"""
+    config = _env_config()
+
+    if not version:
+        version = _ephemeral_version()
+
+    log.info(f"building version: {version}")
+
+    docker_build_cmd = [
+        "docker",
+        "build",
+        "-t",
+        f"{config['app_name']}:{version}",
+        "--label",
+        "from-quilter-cli=true",
+        "--build-arg",
+        f"BUILD_VERSION={version}",
+        "-f",
+        "app/Dockerfile",
+        ".",
+    ]
+
+    minikube_env_cmd = _mkcmd(
+        "docker-env", "--shell", "bash", return_cmd=True, profile=config["ctx_name"]
+    )
+
+    subprocess.run(
+        f"eval $({' '.join(minikube_env_cmd)}) | {' '.join(docker_build_cmd)}",
+        check=True,
+        shell=True,
+    )
+    log.info(f"built: {config['app_name']}:{version}")
