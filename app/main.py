@@ -9,7 +9,16 @@ VERSION_ENV = "APP_VERSION"
 logger = logging.getLogger("uvicorn")
 logger.info("logger intialized")
 
-app = FastAPI(version=os.getenv(VERSION_ENV, "unset"))
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    version = os.getenv(VERSION_ENV, "unset")
+    app.version = version
+    logger.info(f"started with version {version}")
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 logger.info("app initialized")
 
 

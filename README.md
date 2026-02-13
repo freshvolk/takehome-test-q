@@ -1,8 +1,8 @@
 #### todo
 
 - [x] poetry config
-- [ ] app
-- [ ] tests
+- [x] app
+- [x] tests
 - [ ] cli - basic
   - [ ] wrapper
     - [ ] check deps: poetry, doker, tf, minikube
