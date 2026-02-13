@@ -11,7 +11,7 @@
     - [x] run cli through poetry
   - [x] local: fastapi dev
   - [x] test: pytest
-- [ ] dockerfile
+- [x] dockerfile
 - [ ] cli-init: minikube start (profile name from .env)
 - [ ] cli-build: minikube docker-env | docker build (use labels)
 - [ ] cli-down: stop/delete minikube, clean docker

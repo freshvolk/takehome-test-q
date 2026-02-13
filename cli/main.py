@@ -1,7 +1,6 @@
 import datetime
 import os
 import subprocess
-import sys
 
 import typer
 
@@ -14,22 +13,60 @@ APP_DEFAULT = "quilter-home-app"
 app = typer.Typer(no_args_is_help=True, rich_markup_mode=None)
 
 
-def env_config():
+def _env_config():
     config = {}
     config["k8s_ctx"] = os.getenv(CTX_ENV, "")
     config["app_name"] = os.getenv(APP_ENV, APP_DEFAULT)
     return config
 
 
-def ephemeral_version() -> str:
+def _ephemeral_version() -> str:
     return os.getenv("EPHEM_VERSION", f"{datetime.datetime.now():%Y%m%d%H%M%S}")
+
+
+def _mkcmd(
+    *args, profile: str, check: bool = True, **kwargs
+) -> subprocess.CompletedProcess[str]:
+    cmd = ["minikube", f"-p={profile}"] + list(args)
+    return subprocess.run(cmd, check=check, **kwargs)
+
+
+@app.command()
+def init():
+    config = _env_config()
+    mk_profile = config["k8s_ctx"]
+    if mk_profile == "":
+        log.error(
+            f"{CTX_ENV} not set, .env might be missing. be sure to run via ./dev in project root"
+        )
+        raise typer.Exit(1)
+    status = _mkcmd(
+        "status",
+        profile=mk_profile,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if status.returncode == 0:
+        log.info(f"found running {mk_profile}")
+    elif typer.confirm(f"start minikube cluster '{mk_profile}'?", default=True):
+        log.info("starting minikube...")
+        _mkcmd("start", profile=mk_profile, check=True)
+    else:
+        log.error("initialization aborted")
+        raise typer.Exit(1)
+
+    # kubectl use context
+    # tf init
+
+    log.info("environment initialized!")
 
 
 @app.command()
 def local():
     """run fast api locally for live reload"""
     env = os.environ.copy()
-    env["APP_VERSION"] = ephemeral_version()
+    env["APP_VERSION"] = _ephemeral_version()
     return subprocess.run(
         ["poetry", "run", "fastapi", "dev"],
         check=True,
