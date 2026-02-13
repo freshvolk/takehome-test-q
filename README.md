@@ -12,9 +12,9 @@
   - [x] local: fastapi dev
   - [x] test: pytest
 - [x] dockerfile
-- [ ] cli-init: minikube start (profile name from .env)
+- [x] cli-init: minikube start (profile name from .env)
 - [ ] cli-build: minikube docker-env | docker build (use labels)
-- [ ] cli-down: stop/delete minikube, clean docker
+- [x] cli-down: stop/delete minikube, clean docker
 - [ ] terraform
 - [ ] cli-deploy: build + terraform (namespace based on tf workspace)
 - [ ] cli-spin-up: deploy

@@ -6,7 +6,7 @@ import typer
 
 from cli.log import log
 
-CTX_ENV = "K8S_CONTEXT"
+CTX_ENV = "MINIKUBE_CONTEXT"
 APP_ENV = "APP_NAME"
 APP_DEFAULT = "quilter-home-app"
 
@@ -15,7 +15,7 @@ app = typer.Typer(no_args_is_help=True, rich_markup_mode=None)
 
 def _env_config():
     config = {}
-    config["k8s_ctx"] = os.getenv(CTX_ENV, "")
+    config["ctx_name"] = os.getenv(CTX_ENV, "")
     config["app_name"] = os.getenv(APP_ENV, APP_DEFAULT)
     return config
 
@@ -33,8 +33,9 @@ def _mkcmd(
 
 @app.command()
 def init():
+    """initializes minikube environment"""
     config = _env_config()
-    mk_profile = config["k8s_ctx"]
+    mk_profile = config["ctx_name"]
     if mk_profile == "":
         log.error(
             f"{CTX_ENV} not set, .env might be missing. be sure to run via ./dev in project root"
@@ -60,6 +61,18 @@ def init():
     # tf init
 
     log.info("environment initialized!")
+
+
+@app.command()
+def down(
+    delete: bool = typer.Option(False, "--delete", help="delete minikube cluster"),
+):
+    """stops or deletes"""
+    config = _env_config()
+    if not delete:
+        _mkcmd("stop", profile=config["ctx_name"])
+    else:
+        _mkcmd("delete", profile=config["ctx_name"])
 
 
 @app.command()
