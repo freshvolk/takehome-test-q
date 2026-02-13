@@ -6,3 +6,4 @@ __pycache__
 poetry.toml
 .DS_Store
 .pytest_cache
+.coverage

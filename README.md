@@ -15,8 +15,8 @@
 - [x] cli-init: minikube start (profile name from .env)
 - [x] cli-build: minikube docker-env | docker build (use labels)
 - [x] cli-down: stop/delete minikube, clean docker
-- [ ] terraform
-- [ ] cli-deploy: build + terraform (namespace based on tf workspace)
+- [x] terraform
+- [x] cli-deploy: build + terraform (namespace based on tf workspace)
 - [ ] cli-spin-up: deploy
 - [ ] cli-teardown: terraform destroy on current or --all
 - [ ] cli-env list: terraform workspace list (plus status?)
