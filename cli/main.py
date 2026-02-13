@@ -1,6 +1,7 @@
 import datetime
 import os
 import subprocess
+from pathlib import Path
 from typing import Any, Literal, Optional, overload
 
 import typer
@@ -10,6 +11,8 @@ from cli.log import log
 CTX_ENV = "MINIKUBE_CONTEXT"
 APP_ENV = "APP_NAME"
 APP_DEFAULT = "quilter-home-app"
+
+TF_DIR = "tf"
 
 app = typer.Typer(no_args_is_help=True, rich_markup_mode=None)
 
@@ -46,6 +49,16 @@ def _mkcmd(
     return subprocess.run(cmd, check=check, **kwargs)
 
 
+def _tfcmd(
+    *args: str, tfvars: dict[str, str] | None = None, check: bool = True, **kwargs
+):
+    cmd = ["terraform", f"-chdir={TF_DIR}"] + list(args)
+    if tfvars:
+        cmd += [f"-var={var}={value}" for var, value in tfvars.items()]
+    log.debug(cmd)
+    return subprocess.run(cmd, check=check, **kwargs)
+
+
 @app.command()
 def init():
     """initializes minikube environment"""
@@ -73,7 +86,11 @@ def init():
         raise typer.Exit(1)
 
     # kubectl use context
-    # tf init
+
+    if not Path(f"{TF_DIR}/.terraform").exists():
+        _tfcmd("init")
+
+    # use dev if only default exists
 
     log.info("environment initialized!")
 
@@ -144,9 +161,54 @@ def build(
         "docker-env", "--shell", "bash", return_cmd=True, profile=config["ctx_name"]
     )
 
+    log.debug(minikube_env_cmd)
+
+    log.debug(docker_build_cmd)
+
+    eval_cmd = f"eval $({' '.join(minikube_env_cmd)}) && {' '.join(docker_build_cmd)}"
+
+    log.debug(eval_cmd)
+
     subprocess.run(
-        f"eval $({' '.join(minikube_env_cmd)}) | {' '.join(docker_build_cmd)}",
+        eval_cmd,
         check=True,
         shell=True,
+        executable="/bin/bash",
     )
     log.info(f"built: {config['app_name']}:{version}")
+
+
+@app.command()
+def deploy(
+    version: Optional[str] = typer.Option(
+        None,
+        "--version",
+        "-v",
+        help="version to build, default: dev version in the form <project>-dev.gitsha.timestamp will be generated",
+    ),
+    no_build: bool = typer.Option(
+        False, "--no-build", help="skip build, requires version"
+    ),
+    no_test: bool = typer.Option(False, help="skip tests"),
+):
+    """optionally test and build then deploy specified [version]. if no version is provided, must build"""
+    config = _env_config()
+
+    if not version:
+        if no_build:
+            raise typer.BadParameter("if you skip build, you must provide a version")
+        version = _ephemeral_version()
+
+    if not no_test:
+        test()
+
+    if not no_build:
+        build(version)
+
+    tfvars = {
+        "app_version": version,
+        "app_name": config["app_name"],
+        "kubectl_context": config["ctx_name"],
+    }
+
+    _tfcmd("apply", "-auto-approve", tfvars=tfvars)
