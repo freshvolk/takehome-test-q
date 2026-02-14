@@ -28,5 +28,7 @@ build-backend = "poetry.core.masonry.api"
 [dependency-groups]
 dev = [
     "pytest (>=9.0.2,<10.0.0)",
-    "pytest-cov (>=7.0.0,<8.0.0)"
+    "pytest-cov (>=7.0.0,<8.0.0)",
+    "kubernetes (>=35.0.0,<36.0.0)",
+    "kr8s (>=0.20.15,<0.21.0)"
 ]

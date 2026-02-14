@@ -4,12 +4,15 @@ import subprocess
 from pathlib import Path
 from typing import Annotated, Any, Literal, Optional, overload
 
+import kr8s
 import typer
+from kr8s.objects import Deployment
 
 from cli.log import log
 
 CTX_ENV = "MINIKUBE_CONTEXT"
 APP_ENV = "APP_NAME"
+PORT_ENV = "LOCAL_PORT"
 APP_DEFAULT = "quilter-home-app"
 
 TF_DIR = "tf"
@@ -21,6 +24,7 @@ def _env_config():
     config = {}
     config["ctx_name"] = os.getenv(CTX_ENV, "")
     config["app_name"] = os.getenv(APP_ENV, APP_DEFAULT)
+    config["local_port"] = os.getenv(PORT_ENV, "8000")
     return config
 
 
@@ -82,12 +86,12 @@ def _tf_get_workspaces() -> dict[str, bool]:
     workspaces = _tfcmd("workspace", "list", capture_output=True, text=True)
     for line in workspaces.stdout.splitlines():
         active = False
-        if "default" in line:
-            continue
         env_name = line.strip()
         if "*" in line:
             active = True
             env_name = env_name.split()[1]
+        if env_name == "default":
+            continue
         ws_dict[env_name] = active
 
     return ws_dict
@@ -413,6 +417,20 @@ def pt(
     os.execvp("kubectl", cmd)
 
 
+def _k8s_get_ns_if_none(env: str | None):
+    ns = env
+    if not ns:
+        ns = _tf_current_workspace()
+        log.info(f"no env set, defaulting to current environment: {ns}")
+
+        if not ns:
+            log.error(
+                "there appears to be no active environment! this really shouldn't happen!"
+            )
+            raise typer.Exit(7)
+    return ns
+
+
 @k8s_app.command()
 def logs(
     env: str = typer.Option(None),
@@ -421,16 +439,82 @@ def logs(
     """stream logs from app pods"""
     config = _env_config()
 
-    current_env = _tf_current_workspace()
-
-    if not current_env:
-        log.error(
-            "there appears to be no active environment! this really shouldn't happen!"
-        )
-        raise typer.Exit(7)
+    ns = _k8s_get_ns_if_none(env)
 
     args = ["logs", "-l", f"app={config['app_name']}"]
 
     if follow:
         args.append("-f")
-    _kubecmd(*args, ns=current_env, check=True)
+    _kubecmd(*args, ns=ns, check=True)
+
+
+@k8s_app.command()
+def restart(
+    env: str = typer.Option(None),
+):
+    """stream logs from app pods"""
+    ns = _k8s_get_ns_if_none(env)
+
+    args = ["rollout", "restart", "deployment"]
+
+    _kubecmd(*args, ns=ns, check=True)
+
+
+@k8s_app.command()
+def forward(
+    env: str = typer.Option(None, help="environment to forward to"),
+):
+    """opens port forwarding to environment"""
+    config = _env_config()
+    ns = _k8s_get_ns_if_none(env)
+
+    args = [
+        "port-forward",
+        f"deployment/{config['app_name']}",
+        f"{config['local_port']}:8000",
+    ]
+
+    log.info(f"access via: http://localhost:{config['local_port']}/version")
+    _kubecmd(*args, ns=ns, check=True)
+
+
+@app.command("versions")
+def list_versions():
+    """lists deployed application versions across all environments (using kr8s sync)"""
+    conf = _env_config()
+    workspaces = _tf_get_workspaces()
+
+    try:
+        api = kr8s.api(context=conf["ctx_name"])
+    except Exception as e:
+        log.error(f"could not load context {conf['ctx_name']}: {e}")
+        raise typer.Exit(1)
+
+    print(f"\n{'':<2} {'ENV':<15} {'VERSION':<35} {'STATUS'}")
+    print("-" * 70)
+
+    for env, is_active in workspaces.items():
+        if env == "default":
+            continue
+
+        version = "-"
+        status = "checking..."
+
+        try:
+            dep = Deployment.get(conf["app_name"], namespace=env, api=api)
+            full_image = dep.spec["template"]["spec"]["containers"][0]["image"]
+
+            version = full_image.split(":")[-1] if ":" in full_image else "latest"
+            status = "running"
+
+        except kr8s.NotFoundError:
+            status = "not deployed"
+            version = "n/a"
+        except KeyError:
+            status = "malformed spec"
+            version = "?"
+        except Exception as e:
+            status = f"error ({str(e)})"
+
+        prefix = "*" if is_active else " "
+        print(f"{prefix:<2} {env:<15} {version:<35} {status}")

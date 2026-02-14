@@ -25,10 +25,10 @@
 - [ ] passthrough k8s commands
 - [x] cli-k8s
   - [x] log
-  - [ ] versions
-  - [ ] restart
+  - [x] versions
+  - [x] restart
   - [ ] request
-  - [ ] tunnel
+  - [x] tunnel
 - [ ] readme
 
 
