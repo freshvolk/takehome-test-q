@@ -19,6 +19,8 @@ TF_DIR = "tf"
 
 app = typer.Typer(no_args_is_help=True, rich_markup_mode=None)
 
+NO_INIT_COMMANDS = {"down", "help", "local", "test", "init"}
+
 
 def _env_config():
     config = {}
@@ -73,6 +75,11 @@ def _tfcmd(
 
 
 def _tf_switch_workspace(env: str, create: bool = False):
+    if env == "default":
+        log.error(
+            "for reasons unknown to me of now, the 'default' environment is banned :3"
+        )
+        raise typer.Exit(12)
     if create:
         return _tfcmd(
             "workspace", "select", "-or-create", env, capture_output=True, text=True
@@ -105,9 +112,8 @@ def _tf_current_workspace() -> str | None:
     return None
 
 
-@app.command()
-def init():
-    """initializes minikube environment"""
+def _init_cli_env(ctx: typer.Context, force: bool = False):
+    """initializes cli environment"""
     config = _env_config()
     mk_profile = config["ctx_name"]
     if mk_profile == "":
@@ -131,9 +137,7 @@ def init():
         log.error("initialization aborted")
         raise typer.Exit(1)
 
-    # kubectl use context
-
-    if not Path(f"{TF_DIR}/.terraform").exists():
+    if not Path(f"{TF_DIR}/.terraform").exists() or force:
         _tfcmd("init")
 
     current_ws = _tf_current_workspace()
@@ -142,6 +146,24 @@ def init():
         _tf_switch_workspace("dev", create=True)
 
     log.info("environment initialized!")
+
+
+@app.callback(invoke_without_command=True)
+def main(ctx: typer.Context):
+    """quilter dev cli"""
+    if ctx.invoked_subcommand in NO_INIT_COMMANDS:
+        return
+    _init_cli_env(ctx)
+
+
+@app.command()
+def init(
+    ctx: typer.Context,
+    no_init: bool = typer.Option(False, "--no-init", help="Skip init checks"),
+    force: bool = typer.Option(False, "--force", "-f"),
+):
+    """initializes cli environment"""
+    _init_cli_env(ctx, force)
 
 
 @app.command()

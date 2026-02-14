@@ -112,7 +112,7 @@ this makes it easy to run multiple versions side-by-side — handy for testing o
 
 #### why python for the cli?
 
-Initially, it seemed like it would be nice to gain the benefits from typer for the cli. For the majority of the implementation this was true, but the k8s specific commands were a bit of a pain to implement in python. 
+Initially, it seemed like it would be nice to gain the benefits from typer for the cli. For the majority of the implementation this was true, but the k8s specific commands were a bit of a pain to implement in python. There was going to be a nice requests command to make direct requests from the cli but the complexity of working with k8s slowed things down too much.
 
 #### why poetry?
 
