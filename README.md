@@ -121,3 +121,7 @@ Poetry simplifies the dependency management and development environment greatly.
 #### why workspaces as the unit of deployment?
 
 Workspaces provide a natural way to isolate environments and manage their lifecycle. They are a first class concept in terraform and make it easy to reason about the state of each environment. By linking each workspace to a namespace, we can easily reason about the state of each environment and manage their lifecycle. Banning the use of default was probably overkill, but it forces a certain discipline in thinking about environments.
+
+#### why is it so in-depth?
+
+Honestly, mostly was just thinking about what would be nice to have if I was doing development. Ideally this kind of cli would be a build and maintain once proposition that then can be passed around to different projects as needed.
