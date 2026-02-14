@@ -332,6 +332,9 @@ def teardown(
     """destroys all resources in environment, will optionally delete the environment as well"""
     config = _env_config()
 
+    if not env:
+        env = _tf_current_workspace()
+
     envs = _tf_get_workspaces()
 
     if env not in envs:
