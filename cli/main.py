@@ -477,7 +477,7 @@ def logs(
 def restart(
     env: str = typer.Option(None),
 ):
-    """stream logs from app pods"""
+    """restarts all deployments in env"""
     ns = _k8s_get_ns_if_none(env)
 
     args = ["rollout", "restart", "deployment"]
