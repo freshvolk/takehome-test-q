@@ -8,3 +8,6 @@ cli/
 tests/
 *.md
 dev
+.venv
+poetry.toml
+.DS_Store

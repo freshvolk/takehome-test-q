@@ -1,13 +1,13 @@
 FROM python:3.12-slim-trixie AS builder
 
-RUN pip install poetry
+RUN pip install poetry==2.3.2
 
 WORKDIR /code
 
-COPY pyproject.toml poetry.lock* /code/
+COPY pyproject.toml poetry.lock /code/
 
 RUN poetry config virtualenvs.in-project true
-RUN poetry install --without dev --no-root
+RUN poetry install --only main --no-root
 
 FROM python:3.12-slim-trixie AS final
 
